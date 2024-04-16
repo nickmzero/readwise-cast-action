@@ -5,6 +5,10 @@ import {constructCastActionUrl} from '../utils';
 import {db} from '@vercel/postgres';
 
 const handleRequest = frames(async (ctx) => {
+  if (!ctx.message?.isValid) {
+    throw new Error('Invalid Frame');
+  }
+
   const currentUrl = new URL(ctx.url.toString());
   currentUrl.pathname = '/frames/action';
 
