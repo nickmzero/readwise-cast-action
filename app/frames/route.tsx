@@ -3,12 +3,9 @@ import {Button} from 'frames.js/next';
 import {frames} from './frames';
 import {constructCastActionUrl} from '../utils';
 import {db} from '@vercel/postgres';
+import {farcasterHubContext} from 'frames.js/middleware';
 
 const handleRequest = frames(async (ctx) => {
-  if (!ctx.message?.isValid) {
-    throw new Error('Invalid Frame');
-  }
-
   const currentUrl = new URL(ctx.url.toString());
   currentUrl.pathname = '/frames/action';
 

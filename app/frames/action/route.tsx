@@ -3,12 +3,9 @@ import {Button} from 'frames.js/next';
 import {frames} from '../frames';
 import {constructCastActionUrl} from '../../utils';
 import {db} from '@vercel/postgres';
+import {farcasterHubContext} from 'frames.js/middleware';
 
 export const POST = frames(async (ctx) => {
-  if (!ctx.message?.isValid) {
-    throw new Error('Invalid Frame');
-  }
-
   const {requesterFid} = ctx.message || {};
   const castId = ctx.message?.castId;
 
