@@ -59,6 +59,7 @@ const getHighlight = async (fid: number, hash: string) => {
     author: `@${username}::${fid}`,
     highlighted_at: new Date().toISOString(),
     highlight_url: `https://warpcast.com/${username}/${hash}`,
+    note: '.farcaster',
   };
 };
 
