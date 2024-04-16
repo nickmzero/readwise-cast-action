@@ -2,19 +2,43 @@
 import {Button} from 'frames.js/next';
 import {frames} from './frames';
 import {constructCastActionUrl} from '../utils';
+import {db} from '@vercel/postgres';
 
-export const GET = frames(async (ctx) => {
+const handleRequest = frames(async (ctx) => {
+  if (!ctx.message?.isValid) {
+    throw new Error('Invalid Frame');
+  }
+
   const currentUrl = new URL(ctx.url.toString());
-  currentUrl.pathname = '/frames';
+  currentUrl.pathname = '/frames/action';
 
-  const {inputText} = ctx.message || {};
+  const {inputText, requesterFid} = ctx.message || {};
+  console.log({inputText, requesterFid});
 
-  if (inputText) {
+  if (inputText && requesterFid) {
     // check valid readwise key
     const isValidKey = await isValidReadwiseKey(inputText);
+    console.log({isValidKey});
 
     if (isValidKey) {
-      // jwt encode, store in postgres, return frame to install action
+      // TODO: try catch this
+      await upsertKey(requesterFid, inputText);
+
+      const installActionUrl = constructCastActionUrl({
+        actionType: 'post',
+        icon: 'book',
+        name: 'Save to Readwise',
+        postUrl: currentUrl.toString(),
+      });
+
+      return {
+        image: <div>{`Install the "Save to Readwise" action`}</div>,
+        buttons: [
+          <Button action="link" target={installActionUrl}>
+            Install
+          </Button>,
+        ],
+      };
     } else {
       return {
         image: <div>Invalid Readwise key, double check your key</div>,
@@ -29,48 +53,39 @@ export const GET = frames(async (ctx) => {
       buttons: [<Button action="post">Submit</Button>],
     };
   }
-
-  const installActionUrl = constructCastActionUrl({
-    actionType: 'post',
-    icon: 'number',
-    name: 'Check FID',
-    postUrl: currentUrl.toString(),
-  });
-
-  return {
-    image: <div>FID Action</div>,
-    buttons: [
-      <Button action="link" target={installActionUrl}>
-        Install
-      </Button>,
-    ],
-  };
-});
-
-export const POST = frames(async (ctx) => {
-  const castHash = ctx.message?.castId?.hash;
-  console.log({castHash, fid: ctx.message?.castId?.fid});
-
-  return Response.json({
-    message: `The user's FID is ${ctx.message?.castId?.fid}`,
-  });
 });
 
 const isValidReadwiseKey = async (key: string) => {
   try {
     const response = await fetch('https://readwise.io/api/v2/auth/', {
+      method: 'GET',
       headers: {
         Authorization: `Token ${key}`,
       },
     });
 
-    if (response.status === 200) {
-      return true;
-    } else {
-      return false;
-    }
+    return response.ok;
   } catch (err) {
     console.log(`Error checking Readwise key: ${err}`);
     return false;
   }
 };
+
+const upsertKey = async (fid: number, key: string) => {
+  const client = await db.connect();
+  // const hashedKey = await bcrypt.hash(key, 10);
+  // jwt encrypt key
+
+  const result = await client.sql`CREATE EXTENSION IF NOT EXISTS pgcrypto;`;
+
+  console.log({result});
+
+  console.log({fid, key});
+  return client.sql`INSERT INTO readwise (fid, readwise_key)
+  VALUES (${fid}, pgp_sym_encrypt(${key}, ${process.env.SECRET}))
+  ON CONFLICT (fid) DO UPDATE 
+  SET readwise_key = EXCLUDED.readwise_key;`;
+};
+
+export const GET = handleRequest;
+export const POST = handleRequest;
