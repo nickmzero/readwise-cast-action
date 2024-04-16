@@ -9,12 +9,10 @@ const handleRequest = frames(async (ctx) => {
   currentUrl.pathname = '/frames/action';
 
   const {inputText, requesterFid} = ctx.message || {};
-  console.log({inputText, requesterFid});
 
   if (inputText && requesterFid) {
     // check valid readwise key
     const isValidKey = await isValidReadwiseKey(inputText);
-    console.log({isValidKey});
 
     if (isValidKey) {
       // TODO: try catch this
@@ -81,14 +79,7 @@ const isValidReadwiseKey = async (key: string) => {
 
 const upsertKey = async (fid: number, key: string) => {
   const client = await db.connect();
-  // const hashedKey = await bcrypt.hash(key, 10);
-  // jwt encrypt key
 
-  const result = await client.sql`CREATE EXTENSION IF NOT EXISTS pgcrypto;`;
-
-  console.log({result});
-
-  console.log({fid, key});
   return client.sql`INSERT INTO readwise (fid, readwise_key)
   VALUES (${fid}, pgp_sym_encrypt(${key}, ${process.env.SECRET}))
   ON CONFLICT (fid) DO UPDATE 

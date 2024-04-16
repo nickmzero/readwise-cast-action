@@ -6,7 +6,6 @@ import {db} from '@vercel/postgres';
 
 export const POST = frames(async (ctx) => {
   const {requesterFid} = ctx.message || {};
-  console.log(JSON.stringify(ctx, null, 2));
   const castId = ctx.message?.castId;
 
   if (requesterFid) {
@@ -101,7 +100,6 @@ const saveToReadwise = async (
     }
 
     const result = await response.json();
-    console.log(result);
   } catch (error) {
     console.error('There was an error!', error);
   }
