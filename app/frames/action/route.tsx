@@ -5,6 +5,10 @@ import {constructCastActionUrl} from '../../utils';
 import {db} from '@vercel/postgres';
 
 export const POST = frames(async (ctx) => {
+  if (!ctx.message?.isValid) {
+    throw new Error('Invalid Frame');
+  }
+
   const {requesterFid} = ctx.message || {};
   const castId = ctx.message?.castId;
 
