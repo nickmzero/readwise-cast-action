@@ -44,7 +44,19 @@ const handleRequest = frames(async (ctx) => {
     }
   } else {
     return {
-      image: <div>Save to Readwise: input readwise key to get started</div>,
+      image: (
+        <div
+          className="flex"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+          <div>Save to Readwise: input your readwise key to get started</div>
+          <div>(it will be encrypted)</div>
+        </div>
+      ),
       textInput: 'Input Readwise key',
       buttons: [<Button action="post">Submit</Button>],
     };
