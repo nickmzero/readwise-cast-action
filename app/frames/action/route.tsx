@@ -10,21 +10,27 @@ export const POST = frames(async (ctx) => {
   const castId = ctx.message?.castId;
 
   if (requesterFid) {
-    // get readwise api key for fid
-    // const token = await getReadwiseKey(requesterFid);
-    // await saveToReadwise(token, [
-    //   {
-    //     text: ctx.message.
-    //   }
-    // ])
+    try {
+      const highlight = await getHighlight(castId?.fid!, castId?.hash!);
+
+      // get readwise api key for fid
+      const token = await getReadwiseKey(requesterFid);
+      await saveToReadwise(token, [highlight]);
+
+      return Response.json({
+        message: `Saved cast to Readwise 👍`,
+      });
+    } catch (err) {
+      console.error('Error saving to Readwise', err);
+      return Response.json({
+        message: `Error saving cast to Readwise`,
+      });
+    }
+  } else {
+    return Response.json({
+      message: `Error saving cast to Readwise`,
+    });
   }
-
-  const castHash = ctx.message?.castId?.hash;
-  console.log({castHash, fid: ctx.message?.castId?.fid});
-
-  return Response.json({
-    message: `The user's FID is ${ctx.message?.castId?.fid}`,
-  });
 });
 
 const getReadwiseKey = async (fid: number) => {
@@ -37,18 +43,41 @@ const getReadwiseKey = async (fid: number) => {
   return readwiseKey;
 };
 
-const getCast = async (fid: number, hash: string) => {
-  const response = await fetch('https://hub.pinata.cloud/v1/castById', {
-    method: 'GET',
-  });
-  const data = await response.json();
+const getHighlight = async (fid: number, hash: string) => {
+  const [response, username] = await Promise.all([
+    fetch(`https://hub.pinata.cloud/v1/castById?fid=${fid}&hash=${hash}`),
+    getUsernameByFid(fid.toString()),
+  ]);
+  const {
+    data: {
+      castAddBody: {text},
+    },
+  } = (await response.json()) as {data: {castAddBody: {text: string}}};
+
+  return {
+    text,
+    author: `@${username}::${fid}`,
+    highlighted_at: new Date().toISOString(),
+    highlight_url: `https://warpcast.com/${username}/${hash}`,
+  };
+};
+
+const getUsernameByFid = async (fid: string) => {
+  const response = await fetch(
+    `https://fnames.farcaster.xyz/transfers/current?fid=${fid}`,
+    {method: 'GET'}
+  );
+  const {
+    transfer: {username},
+  } = (await response.json()) as {transfer: {username: string}};
+
+  return username;
 };
 
 const saveToReadwise = async (
   token: string,
   highlights: Array<{
     text: string;
-    title: string;
     author: string;
     highlighted_at: string;
     highlight_url: string;
