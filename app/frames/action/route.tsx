@@ -11,9 +11,10 @@ export const POST = frames(async (ctx) => {
 
   if (requesterFid) {
     try {
+      // Fetch the cast and turn into a readwise highlight object.
       const highlight = await getHighlight(castId?.fid!, castId?.hash!);
 
-      // get readwise api key for fid
+      // Fetch the readwise key by fid.
       const token = await getReadwiseKey(requesterFid);
       await saveToReadwise(token, [highlight]);
 
@@ -43,6 +44,7 @@ const getReadwiseKey = async (fid: number) => {
   return readwiseKey;
 };
 
+// Fetches the cast using pinata's free hub
 const getHighlight = async (fid: number, hash: string) => {
   const [response, username] = await Promise.all([
     fetch(`https://hub.pinata.cloud/v1/castById?fid=${fid}&hash=${hash}`),

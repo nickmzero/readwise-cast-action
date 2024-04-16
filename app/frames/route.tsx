@@ -5,9 +5,15 @@ import {constructCastActionUrl} from '../utils';
 import {db} from '@vercel/postgres';
 import {farcasterHubContext} from 'frames.js/middleware';
 
+// Frame flow:
+// 1. User sees frame on feed, `inputText` and `requesterFid` are undefined because they haven't interacted with it yet.
+//    the frame with "Save to Readwise: input your readwise key to get started" is shown.
+// 2. User inputs their readwise api key and submits, `inputText` and `requesterFid` are now defined. If key is valid,
+//    it's upserted into the db, and the frame now shows "Install the "Save to Readwise" action" with an install button.
+//    It links to the cast action url (/frames/action), found in app/frames/action/route.tsx
 const handleRequest = frames(async (ctx) => {
-  const currentUrl = new URL(ctx.url.toString());
-  currentUrl.pathname = '/frames/action';
+  const actionInstallUrl = new URL(ctx.url.toString());
+  actionInstallUrl.pathname = '/frames/action';
 
   const {inputText, requesterFid} = ctx.message || {};
 
@@ -16,14 +22,13 @@ const handleRequest = frames(async (ctx) => {
     const isValidKey = await isValidReadwiseKey(inputText);
 
     if (isValidKey) {
-      // TODO: try catch this
       await upsertKey(requesterFid, inputText);
 
       const installActionUrl = constructCastActionUrl({
         actionType: 'post',
         icon: 'book',
         name: 'Save to Readwise',
-        postUrl: currentUrl.toString(),
+        postUrl: actionInstallUrl.toString(),
       });
 
       return {

@@ -6,8 +6,8 @@ import {createDebugUrl, currentURL, vercelURL} from './utils';
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: 'New api example',
-    description: 'This is a new api example',
+    title: 'Readwise Cast Action Frame',
+    description: 'This is a frame for installing the Readwise cast action.',
     other: {
       ...(await fetchMetadata(
         new URL('/frames', vercelURL() || 'http://localhost:3000')
